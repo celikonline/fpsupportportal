@@ -19,7 +19,7 @@ x-app-env: &app-env
   AI_MODEL: ${AI_MODEL:-}
   PRIVATE_STORAGE_ROOT: /var/lib/portal/files
   ALLOWED_HOSTS: 127.0.0.1,localhost,api
-  CSRF_TRUSTED_ORIGINS: http://127.0.0.1:8080,http://localhost:8080
+  CSRF_TRUSTED_ORIGINS: http://127.0.0.1:1000,http://localhost:1000
 
 x-app-base: &app-base
   build:
@@ -41,7 +41,8 @@ services:
     ports: ["127.0.0.1:56432:5432"]
     volumes:
       - support_db:/var/lib/postgresql/data
-      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+      # Keep this script non-executable so Postgres sources it on Docker Desktop mounts.
+      - ./bootstrap-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U support_owner -d support"]
       interval: 5s
@@ -61,6 +62,8 @@ services:
 
   clamav:
     image: clamav/clamav:stable
+    # The stable image currently provides amd64; Docker Desktop emulates it on Apple Silicon.
+    platform: linux/amd64
     ports: ["127.0.0.1:53310:3310"]
     volumes: ["support_signatures:/var/lib/clamav"]
     restart: unless-stopped
@@ -97,6 +100,7 @@ services:
   api:
     <<: *app-base
     command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 60
+    ports: ["127.0.0.1:1001:8000"]
     depends_on:
       seed:
         condition: service_completed_successfully
@@ -137,7 +141,7 @@ services:
     build:
       context: ../apps/web
     image: fpsupportportal-web:local
-    ports: ["127.0.0.1:8080:80"]
+    ports: ["127.0.0.1:1000:80"]
     depends_on:
       api:
         condition: service_healthy

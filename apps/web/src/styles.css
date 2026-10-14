@@ -1426,95 +1426,6 @@ select {
   justify-content: center;
   gap: 20px;
 }
-.login-page {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  background: var(--surface);
-}
-.login-story {
-  padding: 50px 65px;
-  background: linear-gradient(150deg, #eeedf9, #e1f0f2);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 800px;
-}
-.login-story > div:nth-child(2) {
-  padding: 45px 0;
-}
-.login-story h1 {
-  font-size: 48px;
-  color: #362dae;
-  margin: 17px 0 20px;
-  letter-spacing: -1.5px;
-}
-.login-story p {
-  font-size: 16px;
-  line-height: 1.9;
-  color: #6c6f88;
-}
-.story-ticket {
-  background: #ffffffaa;
-  padding: 26px;
-  border: 1px solid white;
-  border-radius: 14px;
-  max-width: 360px;
-  margin-top: 35px;
-  color: #362dae;
-}
-.story-ticket strong,
-.story-ticket span {
-  display: block;
-}
-.story-ticket strong {
-  margin-top: 12px;
-  font-size: 14px;
-}
-.story-ticket span {
-  font-size: 11px;
-  color: #788091;
-  margin-top: 8px;
-  line-height: 1.9;
-}
-.login-story > small {
-  color: #81849a;
-}
-.login-form {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-}
-.login-form form {
-  width: 100%;
-  max-width: 370px;
-}
-.login-form h2 {
-  font-size: 29px;
-  margin-top: 20px;
-}
-.login-form > form > p {
-  font-size: 12px;
-}
-.pill {
-  display: inline-flex;
-  gap: 5px;
-  align-items: center;
-  font-size: 10px;
-  color: #6c60bc;
-  background: #f1effa;
-  border-radius: 20px;
-  padding: 6px 10px;
-}
-.login-note {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--muted);
-  font-size: 9px !important;
-  margin-top: 25px;
-}
 .context-page {
   max-width: 680px;
   margin: 0 auto;
@@ -1888,20 +1799,6 @@ select {
     right: -60px;
     min-width: 280px;
     width: 300px;
-  }
-  .login-page {
-    display: block;
-  }
-  .login-story {
-    min-height: 0;
-    padding: 25px;
-  }
-  .login-story > div:nth-child(2),
-  .login-story > small {
-    display: none;
-  }
-  .login-form {
-    padding: 38px 25px;
   }
   .context-page {
     padding: 35px 15px;

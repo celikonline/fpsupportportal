@@ -1,0 +1,26 @@
+# HTTPS terminates at Cloudflare; only the loopback gateway is exposed locally.
+x-production-env: &production-env
+  APP_ENV: production
+  ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,api,web}
+  CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-https://localhost}
+
+services:
+  migrate:
+    environment: *production-env
+  # Synthetic demo initialization runs separately; serving processes use production settings.
+  seed:
+    environment:
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,api,web}
+  files-init:
+    environment: *production-env
+  api:
+    environment: *production-env
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; r=urllib.request.Request('http://127.0.0.1:8000/api/v1/health', headers={'X-Forwarded-Proto':'https'}); urllib.request.urlopen(r, timeout=3).close()"]
+  worker:
+    environment: *production-env
+  beat:
+    environment: *production-env
+  web:
+    volumes:
+      - ./nginx-tunnel.conf:/etc/nginx/conf.d/default.conf:ro

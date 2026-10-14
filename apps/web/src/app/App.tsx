@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Link,
@@ -50,6 +50,7 @@ import {
 import { InvitationPage } from "../pages/Invitations";
 import { ApiKeysPage } from "../pages/ApiKeys";
 import { AgentsPage } from "../pages/Agents";
+import { Login } from "./Login";
 
 type Session = {
   user: User | null;
@@ -135,100 +136,6 @@ function Logo() {
       <div>
         faturaport<small>DESTEK PORTALI</small>
       </div>
-    </div>
-  );
-}
-function Login({ onLogin }: { onLogin: () => void }) {
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const submit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setBusy(true);
-    setError("");
-    const data = new FormData(e.currentTarget);
-    try {
-      const result = await api<Session>("auth/login", {
-        method: "POST",
-        body: JSON.stringify(Object.fromEntries(data)),
-      });
-      setCsrf(result.csrfToken);
-      onLogin();
-    } catch (x) {
-      setError((x as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <div className="login-page">
-      <section className="login-story">
-        <Logo />
-        <div>
-          <span className="eyebrow">HER ADIMDA YANINIZDAYIZ</span>
-          <h1>Birlikte çözelim.</h1>
-          <p>
-            Taleplerinizi tek yerden yönetin.
-            <br />
-            Ekibinizle iletişimde kalın, gelişmeleri takip edin.
-          </p>
-          <div className="story-ticket">
-            <LifeBuoy size={34} />
-            <strong>Size özel, güvenli destek.</strong>
-            <span>
-              Her proje için doğru ekip, her talep için açık iletişim.
-            </span>
-          </div>
-        </div>
-        <small>FaturaPort · Destek ve müşteri deneyimi</small>
-      </section>
-      <section className="login-form">
-        <form onSubmit={submit}>
-          <span className="pill">
-            <ShieldCheck size={15} />
-            Güvenli erişim
-          </span>
-          <h2>Hoş geldiniz</h2>
-          <p className="muted">
-            Destek portalına devam etmek için giriş yapın.
-          </p>
-          <label>
-            Kullanıcı adı
-            <input name="username" required autoComplete="username" />
-          </label>
-          <label>
-            Parola
-            <input
-              name="password"
-              type="password"
-              required
-              autoComplete="current-password"
-            />
-          </label>
-          <label>
-            Doğrulama kodu <span className="muted">MFA etkinse</span>
-            <input
-              name="code"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              placeholder="6 haneli kod"
-            />
-          </label>
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
-          )}
-          <button className="button primary full" disabled={busy}>
-            {busy ? "Giriş yapılıyor…" : "Giriş yap"}
-            <ArrowUpRight size={18} />
-          </button>
-          <p className="login-note">
-            <LockKeyhole size={15} />
-            Verileriniz yetkili tenant ve proje kapsamında korunur.
-          </p>
-        </form>
-      </section>
     </div>
   );
 }

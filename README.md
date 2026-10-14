@@ -18,6 +18,38 @@ React/TypeScript arayüzü, Python/Django API, PostgreSQL, Celery ve ClamAV kull
 - Model API’siyle müşteri agentı, PO değerlendirme/yönlendirme/onay kuyruğu ve dış çözüm agentları için MCP.
 - İlgili kişi başvurusu, doğrulanmış export, iki yöneticili imha ve hukuki muhafaza.
 
+## Cloudflare üzerinden Docker yayını
+
+`python3 scripts/configure_local.py` ile Git tarafından dışlanan `.env` dosyasını
+oluşturun. `.env` içine gerçek alan adınızla `ALLOWED_HOSTS=localhost,127.0.0.1,api,web,destek.example.com`
+ve `CSRF_TRUSTED_ORIGINS=https://destek.example.com` ekleyin.
+
+```sh
+docker compose --env-file .env -f infra/compose.yaml -f infra/compose.production.yaml up -d --build --wait --wait-timeout 900
+```
+
+API, worker ve zamanlayıcı production modunda çalışır; HTTPS ve güvenli çerezler
+etkindir. İlk kurulumdaki ayrı seed işi sentetik demo hesapları ve örnek talepler
+oluşturur; bu hesapların parolası `.env` içindeki rastgele `DEMO_PASSWORD` değeridir.
+Bu kurulum demo verisiyle başlar. ClamAV taraması aktiftir. Apple Silicon üzerinde
+ClamAV stable imajı amd64 emülasyonu ile çalışır.
+
+Cloudflare panelinde projeye özel bir Tunnel oluşturun. Published application
+hostname alanına kendi alan adınızı, service alanına **HTTP / web:80** girin.
+Kurulum tokenını paylaşmadan `.runtime/cloudflare-tunnel-token` dosyasına kaydedin
+ve dosyayı yalnızca kendi kullanıcınızın okuyabilmesini sağlayın.
+
+```sh
+chmod 600 .env .runtime/cloudflare-tunnel-token
+docker compose --env-file .env -f infra/compose.yaml -f infra/compose.production.yaml -f infra/compose.cloudflare.yaml up -d --wait --wait-timeout 900
+```
+
+Cloudflare Tunnel DNS kaydı ilgili hostname için Cloudflare tarafından oluşturulur.
+`https://destek.example.com/` ve `https://destek.example.com/api/v1/health`
+adreslerini doğrulayın. Gateway `127.0.0.1:1000`, API `127.0.0.1:1001` üzerinde dinler; router'da
+port açılması gerekmez. Docker Desktop ve bu bilgisayar açık kalmalıdır.
+Cloudflare katmanı olmadan yerel geliştirme için aşağıdaki temel Compose komutunu kullanın.
+
 ## Docker Compose ile çalıştırma
 
 Docker Desktop açıkken proje kökünde `.env` dosyasını oluşturun. Bu bilgisayarda `scripts/configure_local.py` ile üretilen yerel dosya zaten vardır. Yeni kurulumda Python 3 ile `python scripts/configure_local.py` çalıştırın; `.env.example` sadece alanların örneğidir.
@@ -27,11 +59,11 @@ docker compose --env-file .env -f infra/compose.yaml up -d --build --wait --wait
 docker compose --env-file .env -f infra/compose.yaml ps
 ```
 
-Portal: http://127.0.0.1:8080 · Sağlık: http://127.0.0.1:8080/api/v1/health
+Portal: http://127.0.0.1:1000 · API: http://127.0.0.1:1001 · Sağlık: http://127.0.0.1:1000/api/v1/health
 
 Compose PostgreSQL, Redis, ClamAV, migration, sentetik demo yükleme, API, Celery worker/beat ve React arayüzünü başlatır. Dosyalar `support_files` adlı özel Docker hacminde saklanır; migration veritabanı sahibiyle, çalışan API ve worker kısıtlı `support_app` rolüyle bağlanır. İlk ClamAV açılışı imza indirme nedeniyle uzun sürebilir. Kayıtları görmek için `docker compose --env-file .env -f infra/compose.yaml logs -f api worker web`; verileri silmeden durdurmak için `docker compose --env-file .env -f infra/compose.yaml stop` kullanın. Hacimleri silen `down -v` komutunu veri korumak istediğinizde kullanmayın.
 
-Bu Compose yapılandırması yalnız yerel sentetik demo içindir. HTTP kapısı sadece `127.0.0.1:8080` üzerinde açılır. Gerçek kullanıcı/veriyle kullanım için TLS, üretim ayarları ve [işletim rehberindeki](docs/isletim.md) dış servis kontrolleri gerekir.
+Bu Compose yapılandırması yalnız yerel sentetik demo içindir. HTTP kapısı sadece `127.0.0.1:1000` üzerinde açılır. Gerçek kullanıcı/veriyle kullanım için TLS, üretim ayarları ve [işletim rehberindeki](docs/isletim.md) dış servis kontrolleri gerekir.
 
 Demo kullanıcıları: `admin`, `agent`, `customer`, `other`, `customer-bot`, `solution-bot`. Ortak sentetik parola `.env` içindeki `DEMO_PASSWORD` değeridir; uygulama veya test loglarına yazılmaz. Bot hesapları ayrı destek kimlikleridir; model yanıtı proje ayarında açılana kadar kapalıdır.
 
@@ -40,7 +72,7 @@ Demo kullanıcıları: `admin`, `agent`, `customer`, `other`, `customer-bot`, `s
 Bir projeyi açıp sol menüde **API anahtarları** bölümüne gidin. MFA kurulumunu ve güncel doğrulamasını Ayarlar'dan yapın. Anahtara ad, izin ve 30-365 günlük süre seçin. Gizli değer yalnız oluşturma yanıtında ve ekrandaki tek seferlik pencerede görünür; sonradan yalnız ön eki, son kullanımı ve durumu listelenir. İptal edilen anahtar hemen geçersiz olur. Etkin proje üyeliği veya kullanıcı hesabı kaldırıldığında da kullanılamaz.
 
 ```powershell
-curl.exe -H "Authorization: Bearer <API_KEY>" "http://127.0.0.1:8080/api/v1/tenants/<TENANT_ID>/projects/<PROJECT_ID>/tickets"
+curl.exe -H "Authorization: Bearer <API_KEY>" "http://127.0.0.1:1000/api/v1/tenants/<TENANT_ID>/projects/<PROJECT_ID>/tickets"
 ```
 
 Anahtar yalnız kendi projesinin ticket, taslak/ek, capability ve bildirim uç noktalarında kullanılabilir. Salt okunur anahtar değiştirme yapamaz. Yazma işlemleri hâlâ kullanıcının güncel RBAC iznine ve ilgili `Idempotency-Key` / `If-Match` kurallarına uyar. Anahtar yönetimi, kuruluş yönetimi, gizlilik ve hesap işlemleri için oturum ve gerektiğinde MFA gerekir. Üretimde anahtarı yalnız TLS üzerinden kullanın ve güvenilir sunucu gizli deposunda saklayın.

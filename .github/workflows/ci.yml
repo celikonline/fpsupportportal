@@ -1,0 +1,56 @@
+name: Portal checks
+on: [push, pull_request]
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: support_owner
+          POSTGRES_PASSWORD: ci-synthetic-owner-only
+          POSTGRES_DB: support
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U support_owner" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      APP_ENV: development
+      DJANGO_SECRET_KEY: ci-synthetic-key-never-use-in-production
+      POSTGRES_USER: support_owner
+      POSTGRES_PASSWORD: ci-synthetic-owner-only
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: '5432'
+      POSTGRES_DB: support
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -r apps/api/requirements.lock
+      - name: Create restricted runtime test role
+        run: |
+          python - <<'PY'
+          import psycopg
+          with psycopg.connect('host=127.0.0.1 user=support_owner password=ci-synthetic-owner-only dbname=support') as db:
+              db.execute('CREATE ROLE support_app NOSUPERUSER NOBYPASSRLS')
+          PY
+      - run: python apps/api/manage.py test portal --noinput
+      - run: python apps/api/manage.py makemigrations --check --dry-run
+  mcp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip install -r apps/mcp/requirements.lock
+      - run: python -m unittest discover -s apps/mcp -p 'test_*.py' -v
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24', cache: npm, cache-dependency-path: apps/web/package-lock.json}
+      - run: npm ci
+      - run: npm run build
+      - run: npm test

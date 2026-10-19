@@ -6,6 +6,7 @@ import {
   Route,
   Routes,
   useNavigate,
+  useLocation,
   useParams,
   useSearchParams,
 } from "react-router";
@@ -31,6 +32,15 @@ import {
   KeyRound,
   Users,
   CheckCheck,
+  ReceiptText,
+  FileText,
+  ChartNoAxesColumnIncreasing,
+  Landmark,
+  ShoppingCart,
+  Warehouse,
+  Truck,
+  ScrollText,
+  WalletCards,
 } from "lucide-react";
 import {
   api,
@@ -51,6 +61,8 @@ import { InvitationPage } from "../pages/Invitations";
 import { ApiKeysPage } from "../pages/ApiKeys";
 import { AgentsPage } from "../pages/Agents";
 import { Login } from "./Login";
+import { InvoicesPage } from "../pages/Invoices";
+import { BusinessModulesPage } from "../pages/BusinessModules";
 
 type Session = {
   user: User | null;
@@ -271,6 +283,7 @@ function Portal({ session }: { session: Session }) {
   const base = `/t/${t}/p/${p}`;
   const client = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobile, setMobile] = useState(false);
   const [dark, setDark] = useState(
     () => localStorage.getItem("fp-theme") === "dark",
@@ -480,6 +493,27 @@ function Portal({ session }: { session: Session }) {
             <ShieldCheck size={19} />
             Gizlilik merkezi
           </NavLink>
+          {["manager", "lead"].includes(project.role) && (
+            <>
+              <div className="nav-label">FATURAPORT</div>
+              <NavLink to={base + "/business/parties"}><Building2 size={19} />Cariler</NavLink>
+              <NavLink to={base + "/invoices/drafts"}><FileText size={19} />Taslaklar</NavLink>
+              <NavLink end to={base + "/invoices"}>
+                <ReceiptText size={19} />
+                Faturalar
+              </NavLink>
+              <NavLink to={base + "/business/money"}><Landmark size={19} />Gelir &amp; Gider</NavLink>
+              <NavLink to={base + "/business/accounts"}><WalletCards size={19} />Hesaplar</NavLink>
+              <NavLink to={base + "/business/orders"}><ShoppingCart size={19} />Siparişler</NavLink>
+              <NavLink to={base + "/business/offers"}><ScrollText size={19} />Proforma &amp; Teklif</NavLink>
+              <NavLink to={base + "/business/stock"}><Warehouse size={19} />Stok</NavLink>
+              <NavLink to={base + "/business/dispatch"}><Truck size={19} />e-İrsaliye</NavLink>
+              <NavLink to={base + "/business/receipts"}><ReceiptText size={19} />e-SMM</NavLink>
+              <NavLink to={base + "/business/ecommerce"}><ShoppingCart size={19} />e-Ticaret</NavLink>
+              <NavLink to={base + "/business/cheques"}><ScrollText size={19} />Çek &amp; Senet</NavLink>
+              <NavLink to={base + "/business/reports"}><ChartNoAxesColumnIncreasing size={19} />Raporlar</NavLink>
+            </>
+          )}
           <div className="nav-label">YÖNETİM</div>
           <NavLink to={base + "/settings"}>
             <Settings size={19} />
@@ -570,6 +604,41 @@ function Portal({ session }: { session: Session }) {
                 base={base}
                 write={project.role !== "observer" && !project.archived}
               />
+            }
+          />
+          <Route
+            path="invoices/*"
+            element={
+              { manager: true, lead: true }[project.role as "manager" | "lead"] ? (
+                <InvoicesPage base={base} />
+              ) : (
+                <div className="card invoice-access-denied" role="alert">
+                  <ShieldCheck size={24} />
+                  <h1>Bu modüle erişim yetkiniz yok</h1>
+                  <p>
+                    Fatura kayıtlarını yalnızca finans yetkisi olan proje
+                    yöneticileri ve liderler görüntüleyebilir.
+                  </p>
+                  <Link className="button" to={base}>
+                    Genel bakışa dön
+                  </Link>
+                </div>
+              )
+            }
+          />
+          <Route
+            path="business/*"
+            element={
+              ["manager", "lead"].includes(project.role) ? (
+                <BusinessModulesPage key={location.pathname} />
+              ) : (
+                <div className="card invoice-access-denied" role="alert">
+                  <ShieldCheck size={24} />
+                  <h1>Bu modüle erişim yetkiniz yok</h1>
+                  <p>Bu Faturaport alanını yalnızca proje yöneticileri ve liderler görüntüleyebilir.</p>
+                  <Link className="button" to={base}>Genel bakışa dön</Link>
+                </div>
+              )
             }
           />
           <Route
